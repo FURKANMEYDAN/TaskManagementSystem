@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Options;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -13,7 +15,37 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+void ConfigureServices(IServiceCollection services)
+{
+    services.AddCors(options =>
+    {
+        options.AddPolicy("AllowReactApp",
+            builder => builder
+                .WithOrigins("http://localhost:3000") // Adjust this URL based on your React app's URL
+                .AllowAnyMethod()
+                .AllowAnyHeader());
+    });
 
+    services.AddControllers();
+}
+void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+{
+    if (env.IsDevelopment())
+    {
+        app.UseDeveloperExceptionPage();
+    }
+
+    app.UseRouting();
+
+    app.UseCors("AllowReactApp");
+
+    app.UseAuthorization();
+
+    app.UseEndpoints(endpoints =>
+    {
+        endpoints.MapControllers();
+    });
+}
 app.UseHttpsRedirection();
 
 var summaries = new[]
