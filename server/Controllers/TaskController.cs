@@ -1,34 +1,66 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 
 [Route("api/[controller]")]
 [ApiController]
 
-public class TaskController : ControllerBase{
-    private static readonly List<Task> Tasks = new List<Task>();
+public class TaskController : ControllerBase
 
+{
+    private readonly TaskDbContext _context;
+    public TaskController (TaskDbContext context)
+    {
+        _context = context;
+    }
+   
     [HttpGet]
-    public IActionResult GetTasks()
+    public async Task<IActionResult> GetTasks()
      {
-        return Ok(Tasks);
+        var tasks = await _context.Tasks.ToListAsync();
+        return Ok(tasks);
      }
+
+     [HttpGet("{id}")]
+     public async Task<IActionResult> GetTask(int id) 
+     {
+        var task = await _context.Tasks.ToListAsync();
+        if (task == null){
+            return NotFound();
+        }
+        return Ok(task);
+     }
+
      [HttpPost]
-     public IActionResult AddTask([FromBody] Task task){
-        task.Id = Tasks.Count+1;
-        Tasks.Add(task);
+     public async Task<IActionResult> AddTask([FromBody] Task task){
+        _context.Tasks.Add(task);
+        await _context.SaveChangesAsync();
+        return Ok(task);
+     }
+     [HttpPut("{id}")]
+     public async Task<IActionResult> UpdateTask(int id, [FromBody] Task updatedTask){
+       
+        var task = await _context.Tasks.FindAsync(id);
+        if(task == null){
+            return NotFound();
+        }
+        task.Title = updatedTask.Title;
+        task.Description = updatedTask.Description;
+        task.IsComplete = updatedTask.IsComplete;
+        await _context.SaveChangesAsync();
         return Ok(task);
      }
      [HttpDelete("{id}")]
-     public IActionResult DeleteTask(int id)
+     public async Task<IActionResult> DeleteTask(int id)
             {
-                var task = Tasks.FirstOrDefault(x => x.Id ==id);
+                var task = await _context.Tasks.FindAsync(id);
                     if(task==null)
                     {
                         return NotFound();
                     }
-
-                    Tasks.Remove(task);
+                    _context.Tasks.Remove(task);
+                    await _context.SaveChangesAsync();
                     return Ok();
                 
             }

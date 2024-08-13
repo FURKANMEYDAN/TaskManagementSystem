@@ -1,52 +1,50 @@
-using Microsoft.Extensions.Options;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Add CORS policy for the React app
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp",
+        policy => policy
+            .WithOrigins("http://localhost:3000") // Adjust this URL based on your React app's URL
+            .AllowAnyMethod()
+            .AllowAnyHeader());
+});
+
+// Retrieve the connection string from appsettings.json
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+// Register TaskDbContext with PostgreSQL connection
+builder.Services.AddDbContext<TaskDbContext>(options =>
+    options.UseNpgsql(connectionString));
+
+// Add Controllers
+builder.Services.AddControllers();
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    app.UseDeveloperExceptionPage();
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-void ConfigureServices(IServiceCollection services)
-{
-    services.AddCors(options =>
-    {
-        options.AddPolicy("AllowReactApp",
-            builder => builder
-                .WithOrigins("http://localhost:3000") // Adjust this URL based on your React app's URL
-                .AllowAnyMethod()
-                .AllowAnyHeader());
-    });
 
-    services.AddControllers();
-}
-void Configure(IApplicationBuilder app, IWebHostEnvironment env)
-{
-    if (env.IsDevelopment())
-    {
-        app.UseDeveloperExceptionPage();
-    }
-
-    app.UseRouting();
-
-    app.UseCors("AllowReactApp");
-
-    app.UseAuthorization();
-
-    app.UseEndpoints(endpoints =>
-    {
-        endpoints.MapControllers();
-    });
-}
 app.UseHttpsRedirection();
+
+app.UseRouting();
+
+app.UseCors("AllowReactApp");
+
+app.UseAuthorization();
+
+app.MapControllers();
 
 var summaries = new[]
 {
