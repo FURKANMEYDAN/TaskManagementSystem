@@ -11,20 +11,23 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp",
         policy => policy
-            .WithOrigins("http://localhost:3000") // Adjust this URL based on your React app's URL
+            .WithOrigins("http://localhost:5173") // Adjust this URL based on your React app's URL
             .AllowAnyMethod()
             .AllowAnyHeader());
 });
 
+// Add Authorization services
+builder.Services.AddAuthorization();
+
+// Add Controllers
+builder.Services.AddControllers(); // This line is crucial for enabling controllers
+
 // Retrieve the connection string from appsettings.json
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-// Register TaskDbContext with PostgreSQL connection
+// Register TaskDbContext with SQLite connection
 builder.Services.AddDbContext<TaskDbContext>(options =>
-    options.UseNpgsql(connectionString));
-
-// Add Controllers
-builder.Services.AddControllers();
+    options.UseSqlite(connectionString));
 
 var app = builder.Build();
 
@@ -42,33 +45,8 @@ app.UseRouting();
 
 app.UseCors("AllowReactApp");
 
-app.UseAuthorization();
+app.UseAuthorization(); // Make sure this is after UseRouting and before MapControllers
 
-app.MapControllers();
-
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast")
-.WithOpenApi();
+app.MapControllers(); // This maps the controllers to the endpoints
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}

@@ -7,8 +7,8 @@ const AddTask = ({onTaskAdded}) =>{
     const [description,setDescription] = useState('');
 
     const handleSubmit = async (e) =>{
-        e.prevenetDefault();
-        const newTask = {title,description,iCompleted:false};
+        e.preventDefault();
+        const newTask = {title,description,isCompleted:false};
         await addTask(newTask);
         onTaskAdded();
         setTitle('');
@@ -16,7 +16,7 @@ const AddTask = ({onTaskAdded}) =>{
 
     };
     return(
-        <form onSubmit={handleSubmit}>
+        <form className='add-task-form' onSubmit={handleSubmit}>
             <h2>Add Task</h2>
             <input 
             type="text"
